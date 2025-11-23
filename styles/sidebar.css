@@ -1,0 +1,61 @@
+.sidebar {
+     width: 280px;
+     padding: 20px 16px;
+     overflow-y: auto;
+     display: flex;
+     flex-direction: column;
+     gap: 12px;
+ }
+
+ .sidebar ul {
+     list-style: none;
+     padding: 0;
+     margin: 0;
+ }
+
+ .sidebar li {
+     width: 160px;
+     padding: 10px;
+     cursor: pointer;
+     display: flex;
+     align-items: center;
+     transition: background-color 0.3s ease;
+     color: #EEFAFF;
+ }
+
+ .sidebar li:hover {
+     background-color: #222627;
+     cursor: pointer;
+ }
+
+ /* Selected State */
+ .sidebar li.selected {
+     width: 160px;
+     height: auto;
+     padding: 10px;
+     border-radius: 5px;
+     display: flex;
+     align-items: center;
+     font-size: 18px;
+     color: #E63946;
+ }
+
+ .sidebar li.selected:hover {
+     background-color: #222627;
+ }
+
+ .sidebar svg {
+     height: 20px;
+     width: 20px;
+     padding-right: 4px;
+ }
+
+ .sidebar a {
+     text-decoration: none;
+ }
+
+ .foodie {
+     font-size: 45px;
+     color: #E63946;
+     margin: 10px 0px 0px 5px;
+ }

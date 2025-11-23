@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="../styles/sidebar.css">
+  <link rel="stylesheet" href="../styles/global.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <div class="container">
+
+    <!-- Sidebar -->
+    <side-bar></side-bar>
+
+    <!-- Main Content -->
+    <div class="main">
+      <!-- This is where the selected page will be loaded -->
+      <section id="content">
+
+        <div class="tab-container">
+    <div class="tabs">
+      <button class="active">Overview</button>
+      <button>Analytics</button>
+      <button>Reports</button>
+      <button>Notifications</button>
+    </div>
+    <div class="actions">
+      <input type="text" value="Jan 01, 2024 - Apr 01, 2024" readonly />
+      <button>Export</button>
+    </div>
+  </div>
+
+  <div class="stats-card">
+    <p>Total Users</p>
+    <h2>2350</h2>
+  </div>
+
+  <div class="chart-container">
+    <h3>User’s Graph</h3>
+    <canvas id="userChart"></canvas>
+  </div>
+
+    </div>
+
+      </section>
+    </div>
+
+  </div>
+
+  <script type="module" src="../main.js" defer></script>
+</body>
+</html>
+
