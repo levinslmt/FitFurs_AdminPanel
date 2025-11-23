@@ -1,0 +1,65 @@
+/* Container styling */
+.main {
+    flex: 1;
+    margin-left: 0px; /* Offset for fixed sidebar */
+    padding: 40px 30px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    font-family: "Poppins", sans-serif;
+}
+
+/* Section heading */
+.pet-info h1 {
+    font-size: 28px;
+    color: #333;
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+
+/* Table styling */
+.pet-info table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    background-color: #fff;
+}
+
+/* Table header */
+.pet-info table th {
+    background-color: #1c1c1c;
+    color: #fff;
+    text-align: left;
+    padding: 14px 20px;
+    font-weight: 600;
+}
+
+/* Table body cells */
+.pet-info table td {
+    padding: 12px 20px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+}
+
+/* Hover effect for rows */
+.pet-info table tr:hover {
+    background-color: #f0f0f0;
+    transition: 0.3s;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .main {
+        margin-left: 0;
+        padding: 20px;
+    }
+    .pet-info table th,
+    .pet-info table td {
+        padding: 10px 12px;
+    }
+    .pet-info h1 {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+}

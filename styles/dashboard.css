@@ -1,0 +1,158 @@
+/* Main container offset for fixed sidebar */
+.main {
+    flex: 1;
+    margin-left: 0px; /* same as sidebar width */
+    padding: 40px 30px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    font-family: "Poppins", sans-serif;
+}
+
+/* Tab Container */
+.tab-container {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+    align-items: center;
+}
+
+.tabs button {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 10px 20px;
+    margin-right: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.tabs button.active,
+.tabs button:hover {
+    background-color: #1c1c1c;
+    color: #fff;
+    border-color: #1c1c1c;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.actions input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 14px;
+    cursor: not-allowed;
+}
+
+.actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background-color: #E63946;
+    color: #fff;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.actions button:hover {
+    background-color: #d32f3d;
+}
+
+/* Stats card */
+.stats-card {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 25px 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+    width: 200px;
+    text-align: center;
+}
+
+.stats-card p {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.stats-card h2 {
+    font-size: 28px;
+    color: #1c1c1c;
+    margin: 0;
+}
+
+/* Chart container */
+.chart-container {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 25px 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+}
+
+.chart-container h3 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: #222;
+}
+
+/* Table style for admin panel view */
+.main table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    background-color: #fff;
+}
+
+.main table thead {
+    background-color: #1c1c1c;
+    color: #fff;
+}
+
+.main table th,
+.main table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.main table tr:hover {
+    background-color: #f0f0f0;
+}
+
+.main .btn-edit,
+.main .btn-delete {
+    border: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 14px;
+}
+
+.main .btn-edit { background-color: #E63946; }
+.main .btn-delete { background-color: #aaa; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .main {
+        margin-left: 0;
+        padding: 20px;
+    }
+    .tab-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .tabs button {
+        margin-bottom: 5px;
+    }
+}

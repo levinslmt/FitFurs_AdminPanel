@@ -3,14 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>\
-
+  <title>Admin Dashboard</title>
   <link rel="stylesheet" href="../styles/sidebar.css">
-   <side-bar></side-bar>
-
+  <link rel="stylesheet" href="../styles/global.css">
+  <link rel="stylesheet" href="../styles/pets.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
-  <section id="pets" class="pet-info">
+  <div class="container">
+
+    <!-- Sidebar -->
+    <side-bar></side-bar>
+
+    <!-- Main Content -->
+    <div class="main">
+      <!-- This is where the selected page will be loaded -->
+      <section id="pets" class="pet-info">
   <h1>Pet’s Information</h1>
   <table>
     <tr><th>Name</th><th>Breed</th><th>Birth Date</th></tr>
@@ -19,5 +28,16 @@
     <tr><td>Renz</td><td>Beagle</td><td>12-29-24</td></tr>
   </table>
 </section>
+
+  </div>
+
+  <script type="module" src="../main.js" defer></script>
 </body>
 </html>
+
+
+
+
+
+
+
