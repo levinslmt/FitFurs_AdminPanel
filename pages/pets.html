@@ -6,21 +6,23 @@
   <title>Admin Dashboard - Pets</title>
   <link rel="stylesheet" href="../styles/sidebar.css">
   <link rel="stylesheet" href="../styles/global.css">
-  <link rel="stylesheet" href="../styles/users.css"> <!-- same styling as users page -->
+  <link rel="stylesheet" href="../styles/users.css">
 </head>
+
 <body>
   <div class="container">
+    
     <!-- Sidebar -->
     <side-bar></side-bar>
 
-    <!-- Main Content -->
+    <!-- MAIN -->
     <div class="main">
       <section id="pets">
-        <h1>Pets</h1>
+        <h1>Pet Management</h1>
 
         <!-- Controls -->
         <div class="controls">
-          <input type="text" id="searchInput" placeholder="Search by name, breed or owner...">
+          <input type="text" id="searchInput" placeholder="Search by name, breed, or owner...">
           <select id="speciesFilter">
             <option value="">All Species</option>
             <option value="Dog">Dog</option>
@@ -30,13 +32,13 @@
           </select>
         </div>
 
-        <!-- Pets Table -->
+        <!-- Table -->
         <table id="petTable">
           <thead>
             <tr>
               <th>Pet ID</th>
               <th>Pet Name</th>
-              <th>Type</th>
+              <th>Species</th>
               <th>Breed</th>
               <th>Age</th>
               <th>Owner</th>
@@ -45,45 +47,60 @@
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>
-            <!-- Pets will be loaded from Firebase -->
-          </tbody>
+          <tbody></tbody>
         </table>
+
       </section>
     </div>
   </div>
 
   <!-- Edit Modal -->
-  <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); justify-content:center; align-items:center;">
-    <div style="background:#fff; padding:20px; border-radius:8px; width:400px; position:relative;">
+  <div id="editModal" style="
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);
+    justify-content:center; align-items:center;">
+    
+    <div style="background:white; padding:20px; border-radius:10px; width:400px;">
       <h2>Edit Pet</h2>
+
       <form id="editForm">
         <label>Pet Name</label>
-        <input type="text" id="editPetName" required>
-        <label>Type</label>
-        <select id="editType" required>
+        <input id="editPetName" type="text" required>
+
+        <label>Species</label>
+        <select id="editSpecies" required>
           <option value="Dog">Dog</option>
           <option value="Cat">Cat</option>
           <option value="Bird">Bird</option>
           <option value="Other">Other</option>
         </select>
+
         <label>Breed</label>
-        <input type="text" id="editBreed" required>
+        <input id="editBreed" type="text" required>
+
         <label>Age</label>
-        <input type="number" id="editAge" min="0" required>
-        <label>Owner</label>
-        <input type="text" id="editOwner" required>
+        <input id="editAge" type="number" min="0" required>
+
+        <!-- UPDATED HEALTH STATUS DROPDOWN -->
         <label>Health Status</label>
-        <input type="text" id="editHealth" required>
+        <select id="editHealth" required>
+          <option value="Healthy">Healthy</option>
+          <option value="Needs Check-up">Needs Check-up</option>
+          <option value="Sick">Sick</option>
+          <option value="Injured">Injured</option>
+        </select>
+
         <label>Comment</label>
-        <textarea id="editComment" rows="3" placeholder="Enter notes or comments here"></textarea>
-        <div style="margin-top:15px; text-align:right;">
+        <textarea id="editComment" rows="3"></textarea>
+
+        <div style="margin-top:20px; text-align:right;">
           <button type="button" id="cancelEdit">Cancel</button>
           <button type="submit">Save</button>
         </div>
       </form>
+
     </div>
   </div>
+
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -92,13 +109,14 @@
   <script>
     // Firebase config
     const firebaseConfig = {
-       apiKey: "BOQout55yLWUT_u5i4RUnKn7YWjdEVomWAjCkXz3IvTaVVkeCdDEa1TNOlfwKp_9ywtk9N8_xWSesl1MeJQMJbI",
+      apiKey: "BOQout55yLWUT_u5i4RUnKn7YWjdEVomWAjCkXz3IvTaVVkeCdDEa1TNOlfwKp_9ywtk9N8_xWSesl1MeJQMJbI",
       authDomain: "fitfurs12.firebaseapp.com",
       projectId: "fitfurs12",
       storageBucket: "fitfurs12.appspot.com",
       messagingSenderId: "875211703765",
       appId: "1:875211703765:android:b069bfa50ec424172c295c"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -106,29 +124,43 @@
     const searchInput = document.getElementById('searchInput');
     const speciesFilter = document.getElementById('speciesFilter');
 
-    // Load pets from Firebase
-    function loadPets() {
+
+    /* -----------------------------------------------
+      LOAD PETS FROM USERS > userId > pets
+    ------------------------------------------------ */
+    async function loadPets() {
       tableBody.innerHTML = '';
-      db.collection('pets').get().then(snapshot => {
-        snapshot.forEach(doc => {
-          const pet = doc.data();
+
+      const users = await db.collection('users').get();
+
+      users.forEach(async userDoc => {
+        const userData = userDoc.data();
+        const userId = userDoc.id;
+
+        const pets = await db.collection('users').doc(userId).collection('pets').get();
+
+        pets.forEach(petDoc => {
+          const pet = petDoc.data();
+
           const row = document.createElement('tr');
-          row.setAttribute('data-id', doc.id);
+          row.dataset.userId = userId;
+          row.dataset.petId = petDoc.id;
 
           row.innerHTML = `
-            <td>${doc.id}</td>
-            <td>${pet.name || ''}</td>
-            <td>${pet.type || ''}</td>
-            <td>${pet.breed || ''}</td>
-            <td>${pet.age || ''}</td>
-            <td>${pet.owner || ''}</td>
-            <td>${pet.healthStatus || ''}</td>
-            <td>${pet.comment || ''}</td>
+            <td>${petDoc.id}</td>
+            <td>${pet.petName || ""}</td>
+            <td>${pet.species || ""}</td>
+            <td>${pet.breed || ""}</td>
+            <td>${pet.age || ""}</td>
+            <td>${userData.username || userData.email || ""}</td>
+            <td>${pet.healthStatus || ""}</td>
+            <td>${pet.comment || ""}</td>
             <td>
               <button class="edit-btn">Edit</button>
               <button class="delete-btn">Delete</button>
             </td>
           `;
+
           tableBody.appendChild(row);
         });
       });
@@ -136,75 +168,100 @@
 
     loadPets();
 
-    // Search & filter
+
+    /* -----------------------------------------------
+      SEARCH & FILTER
+    ------------------------------------------------ */
     function filterPets() {
-      const searchValue = searchInput.value.toLowerCase();
-      const speciesValue = speciesFilter.value;
+      const search = searchInput.value.toLowerCase();
+      const filterSpecies = speciesFilter.value;
+
       for (let row of tableBody.rows) {
         const name = row.cells[1].textContent.toLowerCase();
         const breed = row.cells[3].textContent.toLowerCase();
         const owner = row.cells[5].textContent.toLowerCase();
-        const type = row.cells[2].textContent;
+        const species = row.cells[2].textContent;
 
-        const matchesSearch = name.includes(searchValue) || breed.includes(searchValue) || owner.includes(searchValue);
-        const matchesSpecies = !speciesValue || type === speciesValue;
+        const matchesSearch =
+          name.includes(search) ||
+          breed.includes(search) ||
+          owner.includes(search);
 
-        row.style.display = (matchesSearch && matchesSpecies) ? '' : 'none';
+        const matchesSpecies =
+          !filterSpecies || species === filterSpecies;
+
+        row.style.display = (matchesSearch && matchesSpecies) ? "" : "none";
       }
     }
 
     searchInput.addEventListener('input', filterPets);
     speciesFilter.addEventListener('change', filterPets);
 
-    // Edit & Delete
-    const editModal = document.getElementById('editModal');
-    const editForm = document.getElementById('editForm');
-    let currentRow;
 
-    tableBody.addEventListener('click', (e) => {
-      const row = e.target.closest('tr');
-      const docId = row.getAttribute('data-id');
+    /* -----------------------------------------------
+      EDIT / DELETE ACTIONS
+    ------------------------------------------------ */
+    const editModal = document.getElementById("editModal");
+    const editForm = document.getElementById("editForm");
 
-      if (e.target.classList.contains('edit-btn')) {
-        currentRow = row;
-        document.getElementById('editPetName').value = row.cells[1].textContent;
-        document.getElementById('editType').value = row.cells[2].textContent;
-        document.getElementById('editBreed').value = row.cells[3].textContent;
-        document.getElementById('editAge').value = row.cells[4].textContent;
-        document.getElementById('editOwner').value = row.cells[5].textContent;
-        document.getElementById('editHealth').value = row.cells[6].textContent;
-        document.getElementById('editComment').value = row.cells[7].textContent;
-        editModal.style.display = 'flex';
+    tableBody.addEventListener("click", async (e) => {
+      const row = e.target.closest("tr");
+      const userId = row.dataset.userId;
+      const petId = row.dataset.petId;
 
-        editForm.onsubmit = (ev) => {
+      // EDIT
+      if (e.target.classList.contains("edit-btn")) {
+        document.getElementById("editPetName").value = row.cells[1].textContent;
+        document.getElementById("editSpecies").value = row.cells[2].textContent;
+        document.getElementById("editBreed").value = row.cells[3].textContent;
+        document.getElementById("editAge").value = row.cells[4].textContent;
+
+        // UPDATED FOR DROPDOWN
+        document.getElementById("editHealth").value = row.cells[6].textContent.trim();
+
+        document.getElementById("editComment").value = row.cells[7].textContent;
+
+        editModal.style.display = "flex";
+
+        editForm.onsubmit = async (ev) => {
           ev.preventDefault();
-          db.collection('pets').doc(docId).update({
-            name: document.getElementById('editPetName').value,
-            type: document.getElementById('editType').value,
-            breed: document.getElementById('editBreed').value,
-            age: Number(document.getElementById('editAge').value),
-            owner: document.getElementById('editOwner').value,
-            healthStatus: document.getElementById('editHealth').value,
-            comment: document.getElementById('editComment').value
-          }).then(() => {
-            editModal.style.display = 'none';
-            loadPets();
-          });
+
+          await db.collection("users")
+            .doc(userId)
+            .collection("pets")
+            .doc(petId)
+            .update({
+              petName: document.getElementById("editPetName").value,
+              species: document.getElementById("editSpecies").value,
+              breed: document.getElementById("editBreed").value,
+              age: Number(document.getElementById("editAge").value),
+              healthStatus: document.getElementById("editHealth").value,
+              comment: document.getElementById("editComment").value
+            });
+
+          editModal.style.display = "none";
+          loadPets();
         };
       }
 
-      if (e.target.classList.contains('delete-btn')) {
-        if (confirm('Are you sure you want to delete this pet?')) {
-          db.collection('pets').doc(docId).delete().then(() => {
-            loadPets();
-          });
+      // DELETE
+      if (e.target.classList.contains("delete-btn")) {
+        if (confirm("Delete this pet?")) {
+          await db.collection("users")
+            .doc(userId)
+            .collection("pets")
+            .doc(petId)
+            .delete();
+
+          loadPets();
         }
       }
     });
 
-    document.getElementById('cancelEdit').addEventListener('click', () => {
-      editModal.style.display = 'none';
+    document.getElementById("cancelEdit").addEventListener("click", () => {
+      editModal.style.display = "none";
     });
+
   </script>
 
   <script type="module" src="../main.js" defer></script>
