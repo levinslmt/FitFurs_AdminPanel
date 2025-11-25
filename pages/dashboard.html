@@ -4,9 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
+
   <link rel="stylesheet" href="../styles/sidebar.css">
   <link rel="stylesheet" href="../styles/global.css">
-  <link rel="stylesheet" href="../styles/dashboard.css">
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -16,42 +17,178 @@
     <!-- Sidebar -->
     <side-bar></side-bar>
 
-    <!-- Main Content -->
+    <!-- MAIN -->
     <div class="main">
-      <!-- This is where the selected page will be loaded -->
-      <section id="content">
+      <section id="dashboard">
 
-        <div class="tab-container">
-    <div class="tabs">
-      <button class="active">Overview</button>
-      <button>Analytics</button>
-      <button>Reports</button>
-      <button>Notifications</button>
-    </div>
-    <div class="actions">
-      <input type="text" value="Jan 01, 2024 - Apr 01, 2024" readonly />
-      <button>Export</button>
-    </div>
-  </div>
+        <h1>Dashboard Overview</h1>
 
-  <div class="stats-card">
-    <p>Total Users</p>
-    <h2>2350</h2>
-  </div>
+        <!-- TOP STATS -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h2 id="totalUsers">0</h2>
+            <p>Total Users</p>
+          </div>
+          <div class="stat-card">
+            <h2 id="totalPets">0</h2>
+            <p>Total Pets</p>
+          </div>
+          <div class="stat-card">
+            <h2 id="totalAppointments">0</h2>
+            <p>Total Appointments</p>
+          </div>
+          <div class="stat-card">
+            <h2 id="totalReports">0</h2>
+            <p>Total Reports</p>
+          </div>
+        </div>
 
-  <div class="chart-container">
-    <h3>User’s Graph</h3>
-    <canvas id="userChart"></canvas>
-  </div>
+        <!-- GRAPH + RECENT -->
+        <div class="dashboard-grid">
 
-    </div>
+          <!-- Graph -->
+          <div class="graph-card">
+            <h3>Pets Added Per User</h3>
+            <canvas id="petsChart"></canvas>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="recent-card">
+            <h3>Recent Activity</h3>
+            <ul id="activityList"></ul>
+          </div>
+
+        </div>
 
       </section>
     </div>
-
   </div>
 
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    /* ----------------------------------------
+       FIREBASE CONFIG
+    ---------------------------------------- */
+    const firebaseConfig = {
+      apiKey: "BOQout55yLWUT_u5i4RUnKn7YWjdEVomWAjCkXz3IvTaVVkeCdDEa1TNOlfwKp_9ywtk9N8_xWSesl1MeJQMJbI",
+      authDomain: "fitfurs12.firebaseapp.com",
+      projectId: "fitfurs12",
+      storageBucket: "fitfurs12.appspot.com",
+      messagingSenderId: "875211703765",
+      appId: "1:875211703765:android:b069bfa50ec424172c295c"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+
+    /* ----------------------------------------
+       LOAD DASHBOARD DATA
+    ---------------------------------------- */
+    async function loadDashboard() {
+      let totalUsers = 0;
+      let totalPets = 0;
+      let totalAppointments = 0;
+      let totalReports = 0;
+      let activity = [];
+
+      const usersSnap = await db.collection("users").get();
+      totalUsers = usersSnap.size;
+
+      const petsPerUser = [];
+
+      // Count pets under each user
+      for (const userDoc of usersSnap.docs) {
+        const petsSnap = await db.collection("users")
+          .doc(userDoc.id)
+          .collection("pets")
+          .get();
+
+        const petCount = petsSnap.size;
+        totalPets += petCount;
+
+        petsPerUser.push({
+          username: userDoc.data().username || userDoc.data().email,
+          count: petCount
+        });
+
+        // Add recent pet activity
+        petsSnap.docs.forEach(p => {
+          activity.push({
+            text: `Pet "${p.data().petName}" updated`,
+            time: new Date().toLocaleString()
+          });
+        });
+      }
+
+      // Appointments (example collection)
+      const appointmentsSnap = await db.collection("appointments").get().catch(() => null);
+      if (appointmentsSnap) totalAppointments = appointmentsSnap.size;
+
+      // Reports (example collection)
+      const reportsSnap = await db.collection("reports").get().catch(() => null);
+      if (reportsSnap) totalReports = reportsSnap.size;
+
+
+      /* UPDATE UI */
+      document.getElementById("totalUsers").textContent = totalUsers;
+      document.getElementById("totalPets").textContent = totalPets;
+      document.getElementById("totalAppointments").textContent = totalAppointments;
+      document.getElementById("totalReports").textContent = totalReports;
+
+      loadActivity(activity);
+      loadPetsChart(petsPerUser);
+    }
+
+
+    /* ----------------------------------------
+       RECENT ACTIVITY LIST
+    ---------------------------------------- */
+    function loadActivity(activity) {
+      const list = document.getElementById("activityList");
+      list.innerHTML = "";
+
+      activity.slice(-10).reverse().forEach(a => {
+        const li = document.createElement("li");
+        li.textContent = `${a.text} — ${a.time}`;
+        list.appendChild(li);
+      });
+    }
+
+
+    /* ----------------------------------------
+       CHART.js - PETS PER USER
+    ---------------------------------------- */
+    function loadPetsChart(data) {
+      const ctx = document.getElementById("petsChart");
+
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: data.map(d => d.username),
+          datasets: [{
+            label: "Pets",
+            data: data.map(d => d.count),
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+
+    loadDashboard();
+  </script>
+
   <script type="module" src="../main.js" defer></script>
+
 </body>
 </html>
-

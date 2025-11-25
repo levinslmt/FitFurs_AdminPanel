@@ -3,43 +3,246 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard</title>
+  <title>Admin Dashboard - Appointments</title>
   <link rel="stylesheet" href="../styles/sidebar.css">
   <link rel="stylesheet" href="../styles/global.css">
-<link rel="stylesheet" href="../styles/appointments.css">
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="../styles/users.css">
 </head>
-
 <body>
   <div class="container">
-
     <!-- Sidebar -->
     <side-bar></side-bar>
 
-    <!-- Main Content -->
+    <!-- MAIN -->
     <div class="main">
-      <!-- This is where the selected page will be loaded -->
       <section id="appointments">
-  <h1>Appointment Schedule</h1>
-  <table>
-    <tr><th>Date</th><th>Time</th><th>Pet Name</th><th>Owner</th><th>Service</th><th>Status</th></tr>
-    <tr><td>2024-10-15</td><td>10:00 AM</td><td>Kylo</td><td>Alexa Hyland</td><td>Grooming</td><td>Confirmed</td></tr>
-    <tr><td>2024-10-16</td><td>2:00 PM</td><td>Leiron</td><td>John Neron</td><td>Vaccination</td><td>Pending</td></tr>
-    <tr><td>2024-10-17</td><td>11:00 AM</td><td>Renz</td><td>Prince Chat</td><td>Check-up</td><td>Confirmed</td></tr>
-    <tr><td>2024-10-18</td><td>4:00 PM</td><td>Kylo</td><td>Alexa Hyland</td><td>Dental</td><td>Cancelled</td></tr>
-    <tr><td>2024-10-19</td><td>9:00 AM</td><td>Leiron</td><td>John Neron</td><td>Grooming</td><td>Confirmed</td></tr>
-  </table>
-</section>
+        <h1>Appointments</h1>
 
+        <!-- Controls -->
+        <div class="controls">
+          <input type="text" id="searchInput" placeholder="Search by pet, owner, or ID...">
+          <select id="statusFilter">
+            <option value="">All Status</option>
+            <option value="Scheduled">Scheduled</option>
+            <option value="Completed">Completed</option>
+            <option value="Canceled">Canceled</option>
+            <option value="No-show">No-show</option>
+          </select>
+          <select id="typeFilter">
+            <option value="">All Types</option>
+            <option value="Check-up">Check-up</option>
+            <option value="Vaccination">Vaccination</option>
+            <option value="Grooming">Grooming</option>
+            <option value="Follow-up">Follow-up</option>
+            <option value="Emergency">Emergency</option>
+          </select>
+        </div>
+
+        <!-- Appointments Table -->
+        <table id="appointmentsTable">
+          <thead>
+            <tr>
+              <th>Appointment ID</th>
+              <th>Pet Name</th>
+              <th>Owner Name</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </div>
   </div>
 
+  <!-- Edit Modal -->
+  <div id="editModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);
+      justify-content:center; align-items:center;">
+    <div style="background:white; padding:20px; border-radius:10px; width:400px;">
+      <h2>Edit Appointment</h2>
+      <form id="editForm">
+        <label>Pet Name</label>
+        <input id="editPetName" type="text" required>
+
+        <label>Owner Name</label>
+        <input id="editOwnerName" type="text" required>
+
+        <label>Date</label>
+        <input id="editDate" type="date" required>
+
+        <label>Time</label>
+        <input id="editTime" type="time" required>
+
+        <label>Type</label>
+        <select id="editType" required>
+          <option value="Check-up">Check-up</option>
+          <option value="Vaccination">Vaccination</option>
+          <option value="Grooming">Grooming</option>
+          <option value="Follow-up">Follow-up</option>
+          <option value="Emergency">Emergency</option>
+        </select>
+
+        <label>Status</label>
+        <select id="editStatus" required>
+          <option value="Scheduled">Scheduled</option>
+          <option value="Completed">Completed</option>
+          <option value="Canceled">Canceled</option>
+          <option value="No-show">No-show</option>
+        </select>
+
+        <div style="margin-top:20px; text-align:right;">
+          <button type="button" id="cancelEdit">Cancel</button>
+          <button type="submit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "BOQout55yLWUT_u5i4RUnKn7YWjdEVomWAjCkXz3IvTaVVkeCdDEa1TNOlfwKp_9ywtk9N8_xWSesl1MeJQMJbI",
+      authDomain: "fitfurs12.firebaseapp.com",
+      projectId: "fitfurs12",
+      storageBucket: "fitfurs12.appspot.com",
+      messagingSenderId: "875211703765",
+      appId: "1:875211703765:android:b069bfa50ec424172c295c"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const tableBody = document.querySelector('#appointmentsTable tbody');
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const typeFilter = document.getElementById('typeFilter');
+
+    /* -----------------------------------------------
+      LOAD APPOINTMENTS
+    ------------------------------------------------ */
+    async function loadAppointments() {
+      tableBody.innerHTML = '';
+
+      const appointmentsSnap = await db.collection('appointments').get();
+
+      appointmentsSnap.forEach(doc => {
+        const appointment = doc.data();
+        const row = document.createElement('tr');
+        row.dataset.appointmentId = doc.id;
+
+        row.innerHTML = `
+          <td>${doc.id}</td>
+          <td>${appointment.petName || ''}</td>
+          <td>${appointment.ownerName || ''}</td>
+          <td>${appointment.date || ''}</td>
+          <td>${appointment.time || ''}</td>
+          <td>${appointment.type || ''}</td>
+          <td>${appointment.status || ''}</td>
+          <td>
+            <button class="edit-btn">Edit</button>
+            <button class="delete-btn">Delete</button>
+          </td>
+        `;
+
+        tableBody.appendChild(row);
+      });
+    }
+
+    loadAppointments();
+
+    /* -----------------------------------------------
+      SEARCH & FILTER
+    ------------------------------------------------ */
+    function filterAppointments() {
+      const search = searchInput.value.toLowerCase();
+      const filterStatus = statusFilter.value;
+      const filterType = typeFilter.value;
+
+      for (let row of tableBody.rows) {
+        const petName = row.cells[1].textContent.toLowerCase();
+        const ownerName = row.cells[2].textContent.toLowerCase();
+        const appointmentId = row.cells[0].textContent.toLowerCase();
+        const status = row.cells[6].textContent;
+        const type = row.cells[5].textContent;
+
+        const matchesSearch =
+          petName.includes(search) ||
+          ownerName.includes(search) ||
+          appointmentId.includes(search);
+
+        const matchesStatus =
+          !filterStatus || status === filterStatus;
+
+        const matchesType =
+          !filterType || type === filterType;
+
+        row.style.display = (matchesSearch && matchesStatus && matchesType) ? "" : "none";
+      }
+    }
+
+    searchInput.addEventListener('input', filterAppointments);
+    statusFilter.addEventListener('change', filterAppointments);
+    typeFilter.addEventListener('change', filterAppointments);
+
+    /* -----------------------------------------------
+      EDIT / DELETE
+    ------------------------------------------------ */
+    const editModal = document.getElementById("editModal");
+    const editForm = document.getElementById("editForm");
+
+    tableBody.addEventListener("click", async (e) => {
+      const row = e.target.closest("tr");
+      if (!row) return;
+      const appointmentId = row.dataset.appointmentId;
+
+      // EDIT
+      if (e.target.classList.contains("edit-btn")) {
+        document.getElementById("editPetName").value = row.cells[1].textContent;
+        document.getElementById("editOwnerName").value = row.cells[2].textContent;
+        document.getElementById("editDate").value = row.cells[3].textContent;
+        document.getElementById("editTime").value = row.cells[4].textContent;
+        document.getElementById("editType").value = row.cells[5].textContent;
+        document.getElementById("editStatus").value = row.cells[6].textContent;
+
+        editModal.style.display = "flex";
+
+        editForm.onsubmit = async (ev) => {
+          ev.preventDefault();
+
+          await db.collection('appointments').doc(appointmentId).update({
+            petName: document.getElementById("editPetName").value,
+            ownerName: document.getElementById("editOwnerName").value,
+            date: document.getElementById("editDate").value,
+            time: document.getElementById("editTime").value,
+            type: document.getElementById("editType").value,
+            status: document.getElementById("editStatus").value
+          });
+
+          editModal.style.display = "none";
+          loadAppointments();
+        };
+      }
+
+      // DELETE
+      if (e.target.classList.contains("delete-btn")) {
+        if (confirm("Delete this appointment?")) {
+          await db.collection('appointments').doc(appointmentId).delete();
+          loadAppointments();
+        }
+      }
+    });
+
+    document.getElementById("cancelEdit").addEventListener("click", () => {
+      editModal.style.display = "none";
+    });
+  </script>
   <script type="module" src="../main.js" defer></script>
 </body>
 </html>
-
-
-
-
-
-
