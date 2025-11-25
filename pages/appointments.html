@@ -8,12 +8,11 @@
   <link rel="stylesheet" href="../styles/global.css">
   <link rel="stylesheet" href="../styles/users.css">
 </head>
+
 <body>
   <div class="container">
-    <!-- Sidebar -->
     <side-bar></side-bar>
 
-    <!-- MAIN -->
     <div class="main">
       <section id="appointments">
         <h1>Appointments</h1>
@@ -21,6 +20,7 @@
         <!-- Controls -->
         <div class="controls">
           <input type="text" id="searchInput" placeholder="Search by pet, owner, or ID...">
+
           <select id="statusFilter">
             <option value="">All Status</option>
             <option value="Scheduled">Scheduled</option>
@@ -28,9 +28,10 @@
             <option value="Canceled">Canceled</option>
             <option value="No-show">No-show</option>
           </select>
+
           <select id="typeFilter">
             <option value="">All Types</option>
-            <option value="Check-up">Check-up</option>
+            <option value="Check Up">Check Up</option>
             <option value="Vaccination">Vaccination</option>
             <option value="Grooming">Grooming</option>
             <option value="Follow-up">Follow-up</option>
@@ -58,17 +59,18 @@
     </div>
   </div>
 
-  <!-- Edit Modal -->
-  <div id="editModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);
-      justify-content:center; align-items:center;">
+  <!-- EDIT MODAL -->
+  <div id="editModal" style="display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
     <div style="background:white; padding:20px; border-radius:10px; width:400px;">
       <h2>Edit Appointment</h2>
+
       <form id="editForm">
         <label>Pet Name</label>
-        <input id="editPetName" type="text" required>
+        <input id="editPetName" type="text" disabled>
 
         <label>Owner Name</label>
-        <input id="editOwnerName" type="text" required>
+        <input id="editOwnerName" type="text" disabled>
 
         <label>Date</label>
         <input id="editDate" type="date" required>
@@ -78,7 +80,7 @@
 
         <label>Type</label>
         <select id="editType" required>
-          <option value="Check-up">Check-up</option>
+          <option value="Check Up">Check Up</option>
           <option value="Vaccination">Vaccination</option>
           <option value="Grooming">Grooming</option>
           <option value="Follow-up">Follow-up</option>
@@ -105,46 +107,80 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <script>
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "BOQout55yLWUT_u5i4RUnKn7YWjdEVomWAjCkXz3IvTaVVkeCdDEa1TNOlfwKp_9ywtk9N8_xWSesl1MeJQMJbI",
-      authDomain: "fitfurs12.firebaseapp.com",
-      projectId: "fitfurs12",
-      storageBucket: "fitfurs12.appspot.com",
-      messagingSenderId: "875211703765",
-      appId: "1:875211703765:android:b069bfa50ec424172c295c"
-    };
+<script>
+/* ----------------------------------------------------------
+   FIREBASE SETUP
+----------------------------------------------------------*/
+const firebaseConfig = {
+  apiKey: "BOQout55yLWUT_u5i4RUnKn7YWjdEVomWAjCkXz3IvTaVVkeCdDEa1TNOlfwKp_9ywtk9N8_xWSesl1MeJQMJbI",
+  authDomain: "fitfurs12.firebaseapp.com",
+  projectId: "fitfurs12",
+  storageBucket: "fitfurs12.appspot.com",
+  messagingSenderId: "875211703765",
+  appId: "1:875211703765:android:b069bfa50ec424172c295c"
+};
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-    const tableBody = document.querySelector('#appointmentsTable tbody');
-    const searchInput = document.getElementById('searchInput');
-    const statusFilter = document.getElementById('statusFilter');
-    const typeFilter = document.getElementById('typeFilter');
+const tableBody = document.querySelector("#appointmentsTable tbody");
+const searchInput = document.getElementById("searchInput");
+const statusFilter = document.getElementById("statusFilter");
+const typeFilter = document.getElementById("typeFilter");
 
-    /* -----------------------------------------------
-      LOAD APPOINTMENTS
-    ------------------------------------------------ */
-    async function loadAppointments() {
-      tableBody.innerHTML = '';
+// Stores references to each appointment
+let appointmentIndex = [];
 
-      const appointmentsSnap = await db.collection('appointments').get();
+/* ----------------------------------------------------------
+   LOAD APPOINTMENTS (Nested)
+----------------------------------------------------------*/
+async function loadAppointments() {
+  tableBody.innerHTML = "";
+  appointmentIndex = [];
 
-      appointmentsSnap.forEach(doc => {
-        const appointment = doc.data();
-        const row = document.createElement('tr');
-        row.dataset.appointmentId = doc.id;
+  const usersSnap = await db.collection("users").get();
+
+  for (let userDoc of usersSnap.docs) {
+    const userId = userDoc.id;
+    const userData = userDoc.data();
+    const ownerName = userData.username || "Unknown";
+
+    const petsSnap = await db.collection("users")
+      .doc(userId).collection("pets").get();
+
+    for (let petDoc of petsSnap.docs) {
+      const petId = petDoc.id;
+      const petData = petDoc.data();
+
+      const appointmentsSnap = await db.collection("users")
+        .doc(userId).collection("pets")
+        .doc(petId).collection("appointments")
+        .get();
+
+      appointmentsSnap.forEach(apptDoc => {
+        const appt = apptDoc.data();
+        const apptId = apptDoc.id;
+
+        appointmentIndex.push({
+          apptId,
+          userId,
+          petId,
+          data: appt,
+          petName: petData.petName,
+          ownerName: ownerName
+        });
+
+        const row = document.createElement("tr");
+        row.dataset.index = appointmentIndex.length - 1;
 
         row.innerHTML = `
-          <td>${doc.id}</td>
-          <td>${appointment.petName || ''}</td>
-          <td>${appointment.ownerName || ''}</td>
-          <td>${appointment.date || ''}</td>
-          <td>${appointment.time || ''}</td>
-          <td>${appointment.type || ''}</td>
-          <td>${appointment.status || ''}</td>
+          <td>${apptId}</td>
+          <td>${petData.petName || ""}</td>
+          <td>${ownerName}</td>
+          <td>${appt.date}</td>
+          <td>${appt.time}</td>
+          <td>${appt.reason}</td>
+          <td>${appt.status}</td>
           <td>
             <button class="edit-btn">Edit</button>
             <button class="delete-btn">Delete</button>
@@ -154,95 +190,105 @@
         tableBody.appendChild(row);
       });
     }
+  }
+}
 
-    loadAppointments();
+loadAppointments();
 
-    /* -----------------------------------------------
-      SEARCH & FILTER
-    ------------------------------------------------ */
-    function filterAppointments() {
-      const search = searchInput.value.toLowerCase();
-      const filterStatus = statusFilter.value;
-      const filterType = typeFilter.value;
+/* ----------------------------------------------------------
+   SEARCH + FILTER
+----------------------------------------------------------*/
+function filterAppointments() {
+  const search = searchInput.value.toLowerCase();
+  const filterStatus = statusFilter.value;
+  const filterType = typeFilter.value;
 
-      for (let row of tableBody.rows) {
-        const petName = row.cells[1].textContent.toLowerCase();
-        const ownerName = row.cells[2].textContent.toLowerCase();
-        const appointmentId = row.cells[0].textContent.toLowerCase();
-        const status = row.cells[6].textContent;
-        const type = row.cells[5].textContent;
+  [...tableBody.rows].forEach(row => {
+    const petName = row.cells[1].textContent.toLowerCase();
+    const ownerName = row.cells[2].textContent.toLowerCase();
+    const appointmentId = row.cells[0].textContent.toLowerCase();
+    const status = row.cells[6].textContent;
+    const type = row.cells[5].textContent;
 
-        const matchesSearch =
-          petName.includes(search) ||
-          ownerName.includes(search) ||
-          appointmentId.includes(search);
+    const matchSearch =
+      petName.includes(search) ||
+      ownerName.includes(search) ||
+      appointmentId.includes(search);
 
-        const matchesStatus =
-          !filterStatus || status === filterStatus;
+    const matchStatus = !filterStatus || status === filterStatus;
+    const matchType = !filterType || type === filterType;
 
-        const matchesType =
-          !filterType || type === filterType;
+    row.style.display = (matchSearch && matchStatus && matchType) ? "" : "none";
+  });
+}
 
-        row.style.display = (matchesSearch && matchesStatus && matchesType) ? "" : "none";
-      }
-    }
+searchInput.addEventListener("input", filterAppointments);
+statusFilter.addEventListener("change", filterAppointments);
+typeFilter.addEventListener("change", filterAppointments);
 
-    searchInput.addEventListener('input', filterAppointments);
-    statusFilter.addEventListener('change', filterAppointments);
-    typeFilter.addEventListener('change', filterAppointments);
+/* ----------------------------------------------------------
+   EDIT / DELETE
+----------------------------------------------------------*/
+const editModal = document.getElementById("editModal");
+const editForm = document.getElementById("editForm");
 
-    /* -----------------------------------------------
-      EDIT / DELETE
-    ------------------------------------------------ */
-    const editModal = document.getElementById("editModal");
-    const editForm = document.getElementById("editForm");
+tableBody.addEventListener("click", async (e) => {
+  const row = e.target.closest("tr");
+  if (!row) return;
 
-    tableBody.addEventListener("click", async (e) => {
-      const row = e.target.closest("tr");
-      if (!row) return;
-      const appointmentId = row.dataset.appointmentId;
+  const index = row.dataset.index;
+  const apptInfo = appointmentIndex[index];
+  const { userId, petId, apptId } = apptInfo;
 
-      // EDIT
-      if (e.target.classList.contains("edit-btn")) {
-        document.getElementById("editPetName").value = row.cells[1].textContent;
-        document.getElementById("editOwnerName").value = row.cells[2].textContent;
-        document.getElementById("editDate").value = row.cells[3].textContent;
-        document.getElementById("editTime").value = row.cells[4].textContent;
-        document.getElementById("editType").value = row.cells[5].textContent;
-        document.getElementById("editStatus").value = row.cells[6].textContent;
+  // EDIT
+  if (e.target.classList.contains("edit-btn")) {
+    document.getElementById("editPetName").value = row.cells[1].textContent;
+    document.getElementById("editOwnerName").value = row.cells[2].textContent;
+    document.getElementById("editDate").value = row.cells[3].textContent;
+    document.getElementById("editTime").value = row.cells[4].textContent;
+    document.getElementById("editType").value = row.cells[5].textContent;
+    document.getElementById("editStatus").value = row.cells[6].textContent;
 
-        editModal.style.display = "flex";
+    editModal.style.display = "flex";
 
-        editForm.onsubmit = async (ev) => {
-          ev.preventDefault();
+    editForm.onsubmit = async (ev) => {
+      ev.preventDefault();
 
-          await db.collection('appointments').doc(appointmentId).update({
-            petName: document.getElementById("editPetName").value,
-            ownerName: document.getElementById("editOwnerName").value,
-            date: document.getElementById("editDate").value,
-            time: document.getElementById("editTime").value,
-            type: document.getElementById("editType").value,
-            status: document.getElementById("editStatus").value
-          });
+      await db.collection("users")
+        .doc(userId).collection("pets")
+        .doc(petId).collection("appointments")
+        .doc(apptId)
+        .update({
+          date: document.getElementById("editDate").value,
+          time: document.getElementById("editTime").value,
+          reason: document.getElementById("editType").value,
+          status: document.getElementById("editStatus").value
+        });
 
-          editModal.style.display = "none";
-          loadAppointments();
-        };
-      }
-
-      // DELETE
-      if (e.target.classList.contains("delete-btn")) {
-        if (confirm("Delete this appointment?")) {
-          await db.collection('appointments').doc(appointmentId).delete();
-          loadAppointments();
-        }
-      }
-    });
-
-    document.getElementById("cancelEdit").addEventListener("click", () => {
       editModal.style.display = "none";
-    });
-  </script>
-  <script type="module" src="../main.js" defer></script>
+      loadAppointments();
+    };
+  }
+
+  // DELETE
+  if (e.target.classList.contains("delete-btn")) {
+    if (confirm("Delete this appointment?")) {
+      await db.collection("users")
+        .doc(userId).collection("pets")
+        .doc(petId).collection("appointments")
+        .doc(apptId)
+        .delete();
+
+      loadAppointments();
+    }
+  }
+});
+
+// Cancel edit
+document.getElementById("cancelEdit").addEventListener("click", () => {
+  editModal.style.display = "none";
+});
+</script>
+<script type="module" src="../main.js" defer></script>
 </body>
 </html>
