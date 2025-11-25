@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login</title>
+  <link rel="stylesheet" href="/mnt/data/auth.css">
+</head>
+
+<body>
+  <div class="main" style="display:flex; justify-content:center; align-items:center; height:100vh; background:#f0f2f5;">
+    <section style="width:400px; padding:30px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); background:#fff; text-align:center;">
+      <h2 style="margin-bottom:20px; font-size:26px; color:#222;">Admin Login</h2>
+
+      <form id="loginForm" style="display:flex; flex-direction:column; gap:15px;">
+        <input type="email" id="loginEmail" placeholder="Email" required style="padding:12px; border:1px solid #ccc; border-radius:8px;">
+        <input type="password" id="loginPassword" placeholder="Password" required style="padding:12px; border:1px solid #ccc; border-radius:8px;">
+        <button type="submit" style="padding:12px; border:none; border-radius:8px; background:#6c757d; color:#fff; cursor:pointer; font-weight:600;">
+          Login
+        </button>
+      </form>
+
+      <p id="loginError" class="error" style="color:red; margin-top:10px;"></p>
+    </section>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDhFZkXI6ZEyBCr700KBklOnfXUEg9T-2M",
+      authDomain: "fitfurs12.firebaseapp.com",
+      databaseURL: "https://fitfurs12-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "fitfurs12",
+      storageBucket: "fitfurs12.firebasestorage.app",
+      messagingSenderId: "875211703765",
+      appId: "1:875211703765:web:2920f00bad00085b2c295c",
+      measurementId: "G-M2Z32GHDHS"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = loginEmail.value;
+      const password = loginPassword.value;
+
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        window.location.href = "dashboard.html";
+      } catch (err) {
+        loginError.textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>
