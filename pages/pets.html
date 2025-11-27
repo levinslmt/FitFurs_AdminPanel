@@ -1,17 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin Dashboard - Pets</title>
-  <link rel="stylesheet" href="../styles/sidebar.css">
-  <link rel="stylesheet" href="../styles/global.css">
-  <link rel="stylesheet" href="../styles/users.css">
+  <link rel="stylesheet" href="../styles/sidebar.css" />
+  <link rel="stylesheet" href="../styles/global.css" />
+  <link rel="stylesheet" href="../styles/users.css" />
 </head>
 
 <body>
   <div class="container">
-    
     <!-- Sidebar -->
     <side-bar></side-bar>
 
@@ -22,7 +21,7 @@
 
         <!-- Controls -->
         <div class="controls">
-          <input type="text" id="searchInput" placeholder="Search by name, breed, or owner...">
+          <input type="text" id="searchInput" placeholder="Search by name, breed, or owner..." />
           <select id="speciesFilter">
             <option value="">All Species</option>
             <option value="Dog">Dog</option>
@@ -49,38 +48,49 @@
           </thead>
           <tbody></tbody>
         </table>
-
       </section>
     </div>
   </div>
 
   <!-- Edit Modal -->
-  <div id="editModal" style="
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);
-    justify-content:center; align-items:center;">
-    
-    <div style="background:white; padding:20px; border-radius:10px; width:400px;">
+  <div
+    id="editModal"
+    style="
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    "
+  >
+    <div
+      style="
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        width: 400px;
+      "
+    >
       <h2>Edit Pet</h2>
 
       <form id="editForm">
         <label>Pet Name</label>
-        <input id="editPetName" type="text" required>
+        <input id="editPetName" type="text" required />
 
         <label>Species</label>
         <select id="editSpecies" required>
           <option value="Dog">Dog</option>
           <option value="Cat">Cat</option>
-          <option value="Bird">Bird</option>
           <option value="Other">Other</option>
         </select>
 
         <label>Breed</label>
-        <input id="editBreed" type="text" required>
+        <input id="editBreed" type="text" required />
 
         <label>Age</label>
-        <input id="editAge" type="number" min="0" required>
+        <input id="editAge" type="number" min="0" required />
 
-        <!-- UPDATED HEALTH STATUS DROPDOWN -->
         <label>Health Status</label>
         <select id="editHealth" required>
           <option value="Healthy">Healthy</option>
@@ -92,85 +102,99 @@
         <label>Comment</label>
         <textarea id="editComment" rows="3"></textarea>
 
-        <div style="margin-top:20px; text-align:right;">
+        <div style="margin-top: 20px; text-align: right;">
           <button type="button" id="cancelEdit">Cancel</button>
           <button type="submit">Save</button>
         </div>
       </form>
-
     </div>
   </div>
-
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
   <script>
     // Firebase config
     const firebaseConfig = {
-      apiKey: "BOQout55yLWUT_u5i4RUnKn7YWjdEVomWAjCkXz3IvTaVVkeCdDEa1TNOlfwKp_9ywtk9N8_xWSesl1MeJQMJbI",
-      authDomain: "fitfurs12.firebaseapp.com",
-      projectId: "fitfurs12",
-      storageBucket: "fitfurs12.appspot.com",
-      messagingSenderId: "875211703765",
-      appId: "1:875211703765:android:b069bfa50ec424172c295c"
+      apiKey:
+        'BOQout55yLWUT_u5i4RUnKn7YWjdEVomWAjCkXz3IvTaVVkeCdDEa1TNOlfwKp_9ywtk9N8_xWSesl1MeJQMJbI',
+      authDomain: 'fitfurs12.firebaseapp.com',
+      projectId: 'fitfurs12',
+      storageBucket: 'fitfurs12.appspot.com',
+      messagingSenderId: '875211703765',
+      appId: '1:875211703765:android:b069bfa50ec424172c295c',
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // ADD THIS: Auth state listener to ensure user is logged in
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "./index.html";  // Redirect if not logged in
+      }
+    });
 
     const tableBody = document.querySelector('#petTable tbody');
     const searchInput = document.getElementById('searchInput');
     const speciesFilter = document.getElementById('speciesFilter');
 
-
+    
     /* -----------------------------------------------
-      LOAD PETS FROM USERS > userId > pets
+        LOAD PETS FROM USERS > userId > pets
     ------------------------------------------------ */
     async function loadPets() {
-      tableBody.innerHTML = '';
+  try {
+    tableBody.innerHTML = '';
+    const usersSnapshot = await db.collection('users').get();
+    console.log('Users count:', usersSnapshot.size);
 
-      const users = await db.collection('users').get();
+    for (const userDoc of usersSnapshot.docs) {
+      const userData = userDoc.data();
+      const userId = userDoc.id;
 
-      users.forEach(async userDoc => {
-        const userData = userDoc.data();
-        const userId = userDoc.id;
+      const petsSnapshot = await db.collection('users').doc(userId).collection('pets').get();
+      console.log(`Pets count for user ${userId}:`, petsSnapshot.size);
 
-        const pets = await db.collection('users').doc(userId).collection('pets').get();
+      petsSnapshot.forEach((petDoc) => {
+        const pet = petDoc.data();
 
-        pets.forEach(petDoc => {
-          const pet = petDoc.data();
+        const row = document.createElement('tr');
+        row.dataset.userId = userId;
+        row.dataset.petId = petDoc.id;
 
-          const row = document.createElement('tr');
-          row.dataset.userId = userId;
-          row.dataset.petId = petDoc.id;
+        row.innerHTML = `
+          <td>${petDoc.id}</td>
+          <td>${pet.petName || ''}</td>
+          <td>${pet.species || ''}</td>
+          <td>${pet.breed || ''}</td>
+          <td>${pet.age || ''}</td>
+          <td>${userData.username || userData.email || ''}</td>
+          <td>${pet.healthStatus || ''}</td>
+          <td>${pet.comment || ''}</td>
+          <td>
+            <button class="edit-btn">Edit</button>
+            <button class="delete-btn">Delete</button>
+          </td>
+        `;
 
-          row.innerHTML = `
-            <td>${petDoc.id}</td>
-            <td>${pet.petName || ""}</td>
-            <td>${pet.species || ""}</td>
-            <td>${pet.breed || ""}</td>
-            <td>${pet.age || ""}</td>
-            <td>${userData.username || userData.email || ""}</td>
-            <td>${pet.healthStatus || ""}</td>
-            <td>${pet.comment || ""}</td>
-            <td>
-              <button class="edit-btn">Edit</button>
-              <button class="delete-btn">Delete</button>
-            </td>
-          `;
-
-          tableBody.appendChild(row);
-        });
+        tableBody.appendChild(row);
       });
     }
+  } catch (error) {
+    console.error('Error loading pets:', error);
+  }
+}
 
-    loadPets();
+// Load pets once DOM content is loaded to ensure DOM selectable
+document.addEventListener('DOMContentLoaded', loadPets);
 
 
     /* -----------------------------------------------
-      SEARCH & FILTER
+        SEARCH & FILTER
     ------------------------------------------------ */
     function filterPets() {
       const search = searchInput.value.toLowerCase();
@@ -187,81 +211,113 @@
           breed.includes(search) ||
           owner.includes(search);
 
-        const matchesSpecies =
-          !filterSpecies || species === filterSpecies;
+        const matchesSpecies = !filterSpecies || species === filterSpecies;
 
-        row.style.display = (matchesSearch && matchesSpecies) ? "" : "none";
+        row.style.display = matchesSearch && matchesSpecies ? '' : 'none';
       }
     }
 
     searchInput.addEventListener('input', filterPets);
     speciesFilter.addEventListener('change', filterPets);
 
-
     /* -----------------------------------------------
-      EDIT / DELETE ACTIONS
+        EDIT / DELETE ACTIONS (WITH UPDATED ACTIVITY LOGGING)
     ------------------------------------------------ */
-    const editModal = document.getElementById("editModal");
-    const editForm = document.getElementById("editForm");
+    const editModal = document.getElementById('editModal');
+    const editForm = document.getElementById('editForm');
 
-    tableBody.addEventListener("click", async (e) => {
-      const row = e.target.closest("tr");
+    tableBody.addEventListener('click', async (e) => {
+      const row = e.target.closest('tr');
+      if (!row) return; // If clicked outside a row, do nothing
+
       const userId = row.dataset.userId;
       const petId = row.dataset.petId;
+      const petName = row.cells[1].textContent; // Get pet name for logging
 
       // EDIT
-      if (e.target.classList.contains("edit-btn")) {
-        document.getElementById("editPetName").value = row.cells[1].textContent;
-        document.getElementById("editSpecies").value = row.cells[2].textContent;
-        document.getElementById("editBreed").value = row.cells[3].textContent;
-        document.getElementById("editAge").value = row.cells[4].textContent;
+      if (e.target.classList.contains('edit-btn')) {
+        document.getElementById('editPetName').value = row.cells[1].textContent;
+        document.getElementById('editSpecies').value = row.cells[2].textContent;
+        document.getElementById('editBreed').value = row.cells[3].textContent;
+        document.getElementById('editAge').value = row.cells[4].textContent;
 
-        // UPDATED FOR DROPDOWN
-        document.getElementById("editHealth").value = row.cells[6].textContent.trim();
+        document.getElementById('editHealth').value = row.cells[6].textContent.trim();
 
-        document.getElementById("editComment").value = row.cells[7].textContent;
+        document.getElementById('editComment').value = row.cells[7].textContent;
 
-        editModal.style.display = "flex";
+        editModal.style.display = 'flex';
 
         editForm.onsubmit = async (ev) => {
           ev.preventDefault();
 
-          await db.collection("users")
-            .doc(userId)
-            .collection("pets")
-            .doc(petId)
-            .update({
-              petName: document.getElementById("editPetName").value,
-              species: document.getElementById("editSpecies").value,
-              breed: document.getElementById("editBreed").value,
-              age: Number(document.getElementById("editAge").value),
-              healthStatus: document.getElementById("editHealth").value,
-              comment: document.getElementById("editComment").value
+          const updatedPetName = document.getElementById('editPetName').value;
+          const adminUser = auth.currentUser;
+
+          try {
+            await db.collection('users').doc(userId).collection('pets').doc(petId).update({
+              petName: updatedPetName,
+              species: document.getElementById('editSpecies').value,
+              breed: document.getElementById('editBreed').value,
+              age: Number(document.getElementById('editAge').value),
+              healthStatus: document.getElementById('editHealth').value,
+              comment: document.getElementById('editComment').value,
             });
 
-          editModal.style.display = "none";
-          loadPets();
+            if (adminUser) {
+              await db.collection('activities').add({
+                type: 'pet_edited',  // Standardized type
+                description: `Admin updated pet details - Pet: ${updatedPetName}`,  // Full readable description
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                userId: adminUser.uid,
+                petId: petId,  // Optional, for future filtering
+              });
+              console.log('Activity logged for update.');
+            } else {
+              console.error('No authenticated admin user. Cannot log activity.');
+            }
+
+            editModal.style.display = 'none';
+            loadPets();
+          } catch (error) {
+            console.error('Error updating pet or logging activity:', error);
+            alert('Failed to update pet. Check console for details.');
+          }
         };
       }
 
       // DELETE
-      if (e.target.classList.contains("delete-btn")) {
-        if (confirm("Delete this pet?")) {
-          await db.collection("users")
-            .doc(userId)
-            .collection("pets")
-            .doc(petId)
-            .delete();
+      if (e.target.classList.contains('delete-btn')) {
+        if (!confirm('Delete this pet?')) return;
+
+        const adminUser = auth.currentUser;
+
+        try {
+          if (adminUser) {
+            await db.collection('activities').add({
+              type: 'pet_deleted',  // Standardized type
+              description: `Admin deleted pet - Pet: ${petName}`,  // Full readable description
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              userId: adminUser.uid,
+              petId: petId,  // Optional, for future filtering
+            });
+            console.log('Activity logged for delete.');
+          } else {
+            console.error('No authenticated admin user. Cannot log activity.');
+          }
+
+          await db.collection('users').doc(userId).collection('pets').doc(petId).delete();
 
           loadPets();
+        } catch (error) {
+          console.error('Error deleting pet or logging activity:', error);
+          alert('Failed to delete pet. Check console for details.');
         }
       }
     });
 
-    document.getElementById("cancelEdit").addEventListener("click", () => {
-      editModal.style.display = "none";
+    document.getElementById('cancelEdit').addEventListener('click', () => {
+      editModal.style.display = 'none';
     });
-
   </script>
 
   <script type="module" src="../main.js" defer></script>

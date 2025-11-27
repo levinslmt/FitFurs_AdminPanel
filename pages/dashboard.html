@@ -16,7 +16,7 @@
 <script>
 firebase.auth().onAuthStateChanged(user => {
   if (!user) {
-    window.location.href = "admin-login.html";
+    window.location.href = "../index.html";
   }
 });
 </script>
@@ -95,19 +95,17 @@ firebase.auth().onAuthStateChanged(user => {
 
 
     /* ----------------------------------------
-       LOAD DASHBOARD DATA
+       LOAD DASHBOARD DATA (with real-time activities)
     ---------------------------------------- */
     async function loadDashboard() {
       let totalUsers = 0;
       let totalPets = 0;
       let totalAppointments = 0;
       let totalReports = 0;
-      let activity = [];
+      let petsPerUser = [];
 
       const usersSnap = await db.collection("users").get();
       totalUsers = usersSnap.size;
-
-      const petsPerUser = [];
 
       // Count pets under each user
       for (const userDoc of usersSnap.docs) {
@@ -123,14 +121,6 @@ firebase.auth().onAuthStateChanged(user => {
           username: userDoc.data().username || userDoc.data().email,
           count: petCount
         });
-
-        // Add recent pet activity
-        petsSnap.docs.forEach(p => {
-          activity.push({
-            text: `Pet "${p.data().petName}" updated`,
-            time: new Date().toLocaleString()
-          });
-        });
       }
 
       // Appointments (example collection)
@@ -141,30 +131,39 @@ firebase.auth().onAuthStateChanged(user => {
       const reportsSnap = await db.collection("reports").get().catch(() => null);
       if (reportsSnap) totalReports = reportsSnap.size;
 
-
       /* UPDATE UI */
       document.getElementById("totalUsers").textContent = totalUsers;
       document.getElementById("totalPets").textContent = totalPets;
       document.getElementById("totalAppointments").textContent = totalAppointments;
       document.getElementById("totalReports").textContent = totalReports;
 
-      loadActivity(activity);
       loadPetsChart(petsPerUser);
+      loadRealTimeActivities();  // Now handles real-time activities
     }
 
 
     /* ----------------------------------------
-       RECENT ACTIVITY LIST
+       REAL-TIME ACTIVITIES LISTENER
     ---------------------------------------- */
-    function loadActivity(activity) {
+    function loadRealTimeActivities() {
       const list = document.getElementById("activityList");
-      list.innerHTML = "";
-
-      activity.slice(-10).reverse().forEach(a => {
-        const li = document.createElement("li");
-        li.textContent = `${a.text} — ${a.time}`;
-        list.appendChild(li);
-      });
+      
+      // Listen for real-time updates on the activities collection
+      db.collection("activities")
+        .orderBy("timestamp", "desc")  // Most recent first
+        .limit(10)  // Show only the latest 10
+        .onSnapshot((snapshot) => {
+          list.innerHTML = "";  // Clear the list
+          
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            const li = document.createElement("li");
+            li.textContent = `${data.description} — ${data.timestamp.toDate().toLocaleString()}`;
+            list.appendChild(li);
+          });
+        }, (error) => {
+          console.error("Error listening to activities:", error);
+        });
     }
 
 
