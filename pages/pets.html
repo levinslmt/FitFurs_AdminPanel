@@ -116,25 +116,29 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
   <script>
-    // Firebase config
+    // Unified Firebase config (same as login page)
     const firebaseConfig = {
-      apiKey:
-        'BOQout55yLWUT_u5i4RUnKn7YWjdEVomWAjCkXz3IvTaVVkeCdDEa1TNOlfwKp_9ywtk9N8_xWSesl1MeJQMJbI',
-      authDomain: 'fitfurs12.firebaseapp.com',
-      projectId: 'fitfurs12',
-      storageBucket: 'fitfurs12.appspot.com',
-      messagingSenderId: '875211703765',
-      appId: '1:875211703765:android:b069bfa50ec424172c295c',
+      apiKey: "AIzaSyDhFZkXI6ZEyBCr700KBklOnfXUEg9T-2M",
+      authDomain: "fitfurs12.firebaseapp.com",
+      databaseURL: "https://fitfurs12-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "fitfurs12",
+      storageBucket: "fitfurs12.firebasestorage.app",
+      messagingSenderId: "875211703765",
+      appId: "1:875211703765:web:2920f00bad00085b2c295c",
+      measurementId: "G-M2Z32GHDHS"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // ADD THIS: Auth state listener to ensure user is logged in
+    // Auth state listener: Redirect to login if not authenticated
     auth.onAuthStateChanged(user => {
       if (!user) {
-        window.location.href = "./index.html";  // Redirect if not logged in
+        console.log("No user authenticated, redirecting to login...");
+        window.location.href = "./index.html";  // Adjust path if needed (e.g., "../index.html" if dashboard is in pages/)
+      } else {
+        console.log("User authenticated:", user.email);
       }
     });
 
@@ -142,56 +146,54 @@
     const searchInput = document.getElementById('searchInput');
     const speciesFilter = document.getElementById('speciesFilter');
 
-    
     /* -----------------------------------------------
         LOAD PETS FROM USERS > userId > pets
     ------------------------------------------------ */
     async function loadPets() {
-  try {
-    tableBody.innerHTML = '';
-    const usersSnapshot = await db.collection('users').get();
-    console.log('Users count:', usersSnapshot.size);
+      try {
+        tableBody.innerHTML = '';
+        const usersSnapshot = await db.collection('users').get();
+        console.log('Users count:', usersSnapshot.size);
 
-    for (const userDoc of usersSnapshot.docs) {
-      const userData = userDoc.data();
-      const userId = userDoc.id;
+        for (const userDoc of usersSnapshot.docs) {
+          const userData = userDoc.data();
+          const userId = userDoc.id;
 
-      const petsSnapshot = await db.collection('users').doc(userId).collection('pets').get();
-      console.log(`Pets count for user ${userId}:`, petsSnapshot.size);
+          const petsSnapshot = await db.collection('users').doc(userId).collection('pets').get();
+          console.log(`Pets count for user ${userId}:`, petsSnapshot.size);
 
-      petsSnapshot.forEach((petDoc) => {
-        const pet = petDoc.data();
+          petsSnapshot.forEach((petDoc) => {
+            const pet = petDoc.data();
 
-        const row = document.createElement('tr');
-        row.dataset.userId = userId;
-        row.dataset.petId = petDoc.id;
+            const row = document.createElement('tr');
+            row.dataset.userId = userId;
+            row.dataset.petId = petDoc.id;
 
-        row.innerHTML = `
-          <td>${petDoc.id}</td>
-          <td>${pet.petName || ''}</td>
-          <td>${pet.species || ''}</td>
-          <td>${pet.breed || ''}</td>
-          <td>${pet.age || ''}</td>
-          <td>${userData.username || userData.email || ''}</td>
-          <td>${pet.healthStatus || ''}</td>
-          <td>${pet.comment || ''}</td>
-          <td>
-            <button class="edit-btn">Edit</button>
-            <button class="delete-btn">Delete</button>
-          </td>
-        `;
+            row.innerHTML = `
+              <td>${petDoc.id}</td>
+              <td>${pet.petName || ''}</td>
+              <td>${pet.species || ''}</td>
+              <td>${pet.breed || ''}</td>
+              <td>${pet.age || ''}</td>
+              <td>${userData.username || userData.email || ''}</td>
+              <td>${pet.healthStatus || ''}</td>
+              <td>${pet.comment || ''}</td>
+              <td>
+                <button class="edit-btn">Edit</button>
+                <button class="delete-btn">Delete</button>
+              </td>
+            `;
 
-        tableBody.appendChild(row);
-      });
+            tableBody.appendChild(row);
+          });
+        }
+      } catch (error) {
+        console.error('Error loading pets:', error);
+      }
     }
-  } catch (error) {
-    console.error('Error loading pets:', error);
-  }
-}
 
-// Load pets once DOM content is loaded to ensure DOM selectable
-document.addEventListener('DOMContentLoaded', loadPets);
-
+    // Load pets once DOM content is loaded
+    document.addEventListener('DOMContentLoaded', loadPets);
 
     /* -----------------------------------------------
         SEARCH & FILTER
@@ -228,11 +230,11 @@ document.addEventListener('DOMContentLoaded', loadPets);
 
     tableBody.addEventListener('click', async (e) => {
       const row = e.target.closest('tr');
-      if (!row) return; // If clicked outside a row, do nothing
+      if (!row) return;
 
       const userId = row.dataset.userId;
       const petId = row.dataset.petId;
-      const petName = row.cells[1].textContent; // Get pet name for logging
+      const petName = row.cells[1].textContent;
 
       // EDIT
       if (e.target.classList.contains('edit-btn')) {
@@ -240,9 +242,7 @@ document.addEventListener('DOMContentLoaded', loadPets);
         document.getElementById('editSpecies').value = row.cells[2].textContent;
         document.getElementById('editBreed').value = row.cells[3].textContent;
         document.getElementById('editAge').value = row.cells[4].textContent;
-
         document.getElementById('editHealth').value = row.cells[6].textContent.trim();
-
         document.getElementById('editComment').value = row.cells[7].textContent;
 
         editModal.style.display = 'flex';
@@ -265,11 +265,11 @@ document.addEventListener('DOMContentLoaded', loadPets);
 
             if (adminUser) {
               await db.collection('activities').add({
-                type: 'pet_edited',  // Standardized type
-                description: `Admin updated pet details - Pet: ${updatedPetName}`,  // Full readable description
+                type: 'pet_edited',
+                description: `Admin updated pet details - Pet: ${updatedPetName}`,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 userId: adminUser.uid,
-                petId: petId,  // Optional, for future filtering
+                petId: petId,
               });
               console.log('Activity logged for update.');
             } else {
@@ -294,11 +294,11 @@ document.addEventListener('DOMContentLoaded', loadPets);
         try {
           if (adminUser) {
             await db.collection('activities').add({
-              type: 'pet_deleted',  // Standardized type
-              description: `Admin deleted pet - Pet: ${petName}`,  // Full readable description
+              type: 'pet_deleted',
+              description: `Admin deleted pet - Pet: ${petName}`,
               timestamp: firebase.firestore.FieldValue.serverTimestamp(),
               userId: adminUser.uid,
-              petId: petId,  // Optional, for future filtering
+              petId: petId,
             });
             console.log('Activity logged for delete.');
           } else {

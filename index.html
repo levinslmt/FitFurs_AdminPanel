@@ -29,6 +29,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
   <script>
+    // Unified Firebase config (same as dashboard)
     const firebaseConfig = {
       apiKey: "AIzaSyDhFZkXI6ZEyBCr700KBklOnfXUEg9T-2M",
       authDomain: "fitfurs12.firebaseapp.com",
@@ -45,14 +46,16 @@
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const email = loginEmail.value;
-      const password = loginPassword.value;
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
 
       try {
         await auth.signInWithEmailAndPassword(email, password);
-        window.location.href = "../pages/dashboard.html";
+        console.log("Login successful, redirecting to dashboard...");
+        window.location.href = "../pages/dashboard.html";  // Adjust path if needed
       } catch (err) {
-        loginError.textContent = err.message;
+        console.error("Login error:", err);
+        document.getElementById("loginError").textContent = err.message;
       }
     });
   </script>
